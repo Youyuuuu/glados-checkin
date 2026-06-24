@@ -13,7 +13,7 @@ on:
 jobs:
   checkin:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -28,20 +28,40 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Checkin
+      # ---------- 账号1 ----------
+      - name: Checkin Account 1
         run: python checkin.py
         timeout-minutes: 5
         env:
           GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
 
-      - name: Retry on Failure
+      - name: Retry Account 1 on Failure
         if: failure()
         run: |
-          echo "First attempt failed, retrying in 60s..."
+          echo "Account 1 first attempt failed, retrying in 60s..."
           sleep 60
           python checkin.py
         timeout-minutes: 5
         env:
           GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+
+      # ---------- 账号2 ----------
+      - name: Checkin Account 2
+        run: python checkin.py
+        timeout-minutes: 5
+        env:
+          GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE_2 }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+
+      - name: Retry Account 2 on Failure
+        if: failure()
+        run: |
+          echo "Account 2 first attempt failed, retrying in 60s..."
+          sleep 60
+          python checkin.py
+        timeout-minutes: 5
+        env:
+          GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE_2 }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
