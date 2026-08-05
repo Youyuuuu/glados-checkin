@@ -65,3 +65,23 @@ jobs:
         env:
           GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE_2 }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+
+      # ---------- 账号3 ----------
+      - name: Checkin Account 3
+        run: python checkin.py
+        timeout-minutes: 5
+        env:
+          GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE_3 }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+
+      - name: Retry Account 3 on Failure
+        if: failure()
+        run: |
+          echo "Account 3 first attempt failed, retrying in 60s..."
+          sleep 60
+          python checkin.py
+        timeout-minutes: 5
+        env:
+          GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE_3 }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+
