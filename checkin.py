@@ -32,9 +32,17 @@ DOMAINS = [
 ]
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Content-Type': 'application/json;charset=UTF-8',
     'Accept': 'application/json, text/plain, */*',
+    # 以下为绕过 device-mismatch 反自动化检测所需的浏览器指纹头
+    'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"macOS"',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-dest': 'empty',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
 }
 
 # ================= 工具函数 =================
@@ -48,8 +56,8 @@ def extract_cookie(raw: str):
     if not raw: return None
     raw = raw.strip()
     
-    # Cookie-Editor 格式 (koa:sess=xxx; koa:sess.sig=yyy)
-    if 'koa:sess=' in raw or 'koa:sess.sig=' in raw:
+    # Cookie 格式 (新版 gld:sess=xxx; gld:sess.sig=yyy，旧版 koa:sess)
+    if 'gld:sess=' in raw or 'gld:sess.sig=' in raw or 'koa:sess=' in raw or 'koa:sess.sig=' in raw:
         return raw
         
     # JSON
@@ -186,11 +194,12 @@ def main():
         g.get_status()
         g.get_points()
         
-        # 3. Log
-        status_icon = "✅" if "Checkin" in msg else "⚠️"
+        # 3. Log（"Checkin!"=今日首签成功，"observation logged"=今日已签过，两者均视为正常）
+        is_success = "Checkin" in msg or "observation" in msg
+        status_icon = "✅" if is_success else "⚠️"
         log(f"用户: {g.email} | 积分: {g.points} | 天数: {g.left_days} | 结果: {msg}")
         
-        if "Checkin" in msg: success_cnt += 1
+        if is_success: success_cnt += 1
         
         # 4. Result Formatting
         results.append(f"""
@@ -220,6 +229,11 @@ def main():
         content = "".join(results)
         content += f"<br><small>时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</small>"
         pushplus(ptoken, title, content)
+
+    # 全部账号签到失败时返回非零退出码，让 workflow 真正 fail（修复"假成功"bug）
+    if success_cnt == 0:
+        log("❌ 所有账号签到失败，exit 1")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
